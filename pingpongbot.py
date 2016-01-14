@@ -5,7 +5,6 @@ import logging
 import socket
 import sys
 import webbrowser
-import math
 
 
 '''def slope(x1, x2, y1, y2):
