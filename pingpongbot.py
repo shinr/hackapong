@@ -11,7 +11,7 @@ import webbrowser
     return (y2-y1)/(x2-x1)'''
    
 #used to calculate y position where ball hits   
-def prePosition(x1, x2, y1, y2, left=True):
+def futurePosition(x1, x2, y1, y2, left=True):
     slope = (y2-y1)/(x2-x1)
     #x2 = 5
     if left:
@@ -19,7 +19,7 @@ def prePosition(x1, x2, y1, y2, left=True):
         slope = slope*(5-x1)
         return slope -(y1)
         
-    #x = 635
+    #x2 = 635
     else:
         slope = slope*(635-x1)
         return slope -(y1)
