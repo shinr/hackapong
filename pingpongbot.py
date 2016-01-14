@@ -5,8 +5,26 @@ import logging
 import socket
 import sys
 import webbrowser
+import math
 
 
+'''def slope(x1, x2, y1, y2):
+    return (y2-y1)/(x2-x1)'''
+   
+#used to calculate y position where ball hits   
+def prePosition(x1, x2, y1, y2, left=True):
+    slope = (y2-y1)/(x2-x1)
+    #x2 = 5
+    if left:
+        #slope = (y2 -y1)/(5 - x1)
+        slope = slope*(5-x1)
+        return slope -(y1)
+        
+    #x = 635
+    else:
+        slope = slope*(635-x1)
+        return slope -(y1)
+        
 
 class JsonOverTcp(object):
     """Send and receive newline delimited JSON messages over TCP."""
@@ -57,6 +75,7 @@ class PingPongBot(object):
 
     def _make_move(self, data):
         if data['left']['y'] < data['ball']['pos']['y']:
+            print data
             self._connection.send({'msgType': 'changeDir', 'data': 1.0})
         elif data['left']['y'] > data['ball']['pos']['y']:
             self._connection.send({'msgType': 'changeDir', 'data': -1.0})
