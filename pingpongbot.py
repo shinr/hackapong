@@ -12,7 +12,7 @@ import webbrowser
    
 #used to calculate y position where ball hits   
 def futurePosition(x1, x2, y1, y2, left=True):
-    slope = (y2-y1)/(x2-x1)
+    slope = (y2-y1) / (x2-x1)
     #x2 = 5
     if left:
         #slope = (y2 -y1)/(5 - x1)
@@ -24,7 +24,6 @@ def futurePosition(x1, x2, y1, y2, left=True):
         slope = slope*(635-x1)
         return slope -(y1)
         
-
 class JsonOverTcp(object):
     """Send and receive newline delimited JSON messages over TCP."""
     def __init__(self, host, port):
@@ -40,11 +39,28 @@ class JsonOverTcp(object):
             data += self._socket.recv(1)
         return json.loads(data)
 
+class Point(object):
+    x = 0.0
+    y = 0.0
+    def __init__(self, x=0.0, y=0.0):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):
+        print "eq", self.x, self.y, other.x, other.y
+        if self.x == other.x and self.y == other.y:
+            return True
+        return False
 
 class PingPongBot(object):
     missile_ready = False
     bot_side = None
     bot_name = None
+    ball_old_pos = None
+    ball_position = None
+    ball_predicted_pos = None
+    x = 0
+    y = 0
     def __init__(self, connection, log):
         self._connection = connection
         self._log = log
@@ -83,19 +99,59 @@ class PingPongBot(object):
             self.bot_side = "left"
         else:
             self.bot_side = "right"
-        print self.bot_side
+
+    def close_enough(self, y, target_y):
+        if y < target_y + 2 and y > target_y - 2:
+            return True
+        return False
 
     def _make_move(self, data):
-        if data['left']['y'] < data['ball']['pos']['y']:
-            print data
-            self._connection.send({'msgType': 'changeDir', 'data': 1.0})
-        elif data['left']['y'] > data['ball']['pos']['y']:
-            self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+        offset = 0
+        self.y = data[self.bot_side]['y']
+        if self.ball_old_pos is None and self.ball_position is None:
+            self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
+        else:
+            self.ball_old_pos = self.ball_position
+            self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
+        if self.ball_old_pos and self.ball_position:
+            slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
+            #going left
+            if self.ball_position.x < self.ball_old_pos.x:
+                self.ball_predicted_pos = Point(0.0, ((self.ball_position.x - 5) * slope - self.ball_position.y)*-1.0) 
+                if self.ball_predicted_pos.y > 480:
+                    self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
+                    offset = 25
+                elif self.ball_predicted_pos.y < 0:
+                    self.ball_predicted_pos.y *= -1.0
+                    offset = -25
+                if self.y - offset < self.ball_predicted_pos.y:
+                    if self.close_enough(self.y, self.ball_predicted_pos.y):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+                else:
+                    if self.close_enough(self.y, self.ball_predicted_pos.y):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
+            else:
+                if self.y > 240:
+                    if self.close_enough(self.y, 240):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
+                else:
+                    if self.close_enough(self.y, 240):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+
 
     def _game_over(self, data):
         self._log.info('Game ended. Winner: %s' % data)
 
     def _missile_ready(self):
+        print "Missile ready!"
         self.missile_ready = True
 
 
