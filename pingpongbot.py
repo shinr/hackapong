@@ -116,8 +116,26 @@ class PingPongBot(object):
         if self.ball_old_pos and self.ball_position:
             slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
             #going left
-            if self.ball_position.x < self.ball_old_pos.x:
+            if self.ball_position.x < self.ball_old_pos.x and self.bot_side == "left":
                 self.ball_predicted_pos = Point(0.0, ((self.ball_position.x - 5) * slope - self.ball_position.y)*-1.0) 
+                if self.ball_predicted_pos.y > 480:
+                    self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
+                    offset = 25
+                elif self.ball_predicted_pos.y < 0:
+                    self.ball_predicted_pos.y *= -1.0
+                    offset = -25
+                if self.y - offset < self.ball_predicted_pos.y:
+                    if self.close_enough(self.y, self.ball_predicted_pos.y):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+                else:
+                    if self.close_enough(self.y, self.ball_predicted_pos.y):
+                        self._connection.send({'msgType':'changeDir', 'data':0.0})
+                    else:
+                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
+            elif self.ball_position.x > self.ball_old_pos.x and self.bot_side == "right":
+                self.ball_predicted_pos = Point(640.0, ((640 - self.ball_position.x) * slope - self.ball_position.y)*-1.0) 
                 if self.ball_predicted_pos.y > 480:
                     self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
                     offset = 25
