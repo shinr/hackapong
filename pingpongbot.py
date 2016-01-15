@@ -133,11 +133,43 @@ class PingPongBot(object):
                 else:
                     self._connection.send({'msgType':'changeDir', 'data':speed})
             else:
+            
+                slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
+                print '\nslope*: ', slope, '\n'
                 
-                if data['left']['y'] < data['ball']['pos']['y']:
-                    self._connection.send({'msgType': 'changeDir', 'data': 1.0})
-                elif data['left']['y'] > data['ball']['pos']['y']:
-                    self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                if slope < 0.15 and slope > -0.15:
+                    if data['left']['y'] < data['ball']['pos']['y']:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                    elif data['left']['y'] > data['ball']['pos']['y']:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                
+                elif slope < 0.3 and slope > -0.3:
+                    if data['left']['y'] < 80:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
+                    elif data['left']['y'] > 400:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    elif slope < 0:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    else:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
+                else:
+                    if data['left']['y'] < 150:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
+                    elif data['left']['y'] > 350:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    elif slope < 0:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    else:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
+                        
                 
                 
         self.ball_old_pos = self.ball_position
