@@ -132,16 +132,13 @@ class PingPongBot(object):
                 else:
                     self._connection.send({'msgType':'changeDir', 'data':speed})
             else:
-                if self.y > 240:
-                    if self.close_enough(self.y + offset, 240):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
-                else:
-                    if self.close_enough(self.y + offset, 240):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+                
+                if data['left']['y'] < data['ball']['pos']['y']:
+                    self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                elif data['left']['y'] > data['ball']['pos']['y']:
+                    self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                
+                
         self.ball_old_pos = self.ball_position
 
     def _game_over(self, data):
