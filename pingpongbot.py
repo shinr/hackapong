@@ -162,6 +162,19 @@ class PingPongBot(object):
                     else:
                         self._connection.send({'msgType': 'changeDir', 'data': 1.0})
                         
+                elif slope > 0.60 and slope < -0.60:
+                    if data['left']['y'] < 200:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
+                    elif data['left']['y'] > 280:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    elif slope < 0:
+                        self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        
+                    else:
+                        self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                        
                 else:
                     if data['left']['y'] < 150:
                         self._connection.send({'msgType': 'changeDir', 'data': 1.0})
