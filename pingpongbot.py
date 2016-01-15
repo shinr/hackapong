@@ -124,7 +124,7 @@ class PingPongBot(object):
             if self.ball_old_pos.x - self.ball_position.x > 0:
                 slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
                 self.ball_predicted_pos = Point(0.0, ((self.ball_position.x) * slope - self.ball_position.y)*-1.0) 
-                print self.ball_predicted_pos.y
+                print self.ball_predicted_pos.y,
                 if self.ball_predicted_pos.y > 480:
                     self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
                 elif self.ball_predicted_pos.y < 0:
@@ -132,19 +132,30 @@ class PingPongBot(object):
                 linear_interpolation = self.ball_predicted_pos.y - (self.y - offset)
                 linear_interpolation /= 8.0
                 if linear_interpolation < 0.0:
-                    if self.ball_position.x < 64.0:
+                    if self.ball_position.x < 198.0:
+                        print "close",
                         speed = -1.0
                     else:
-                        speed = max(linear_interpolation, -1.0)
+                        speed = -1.0#max(linear_interpolation, -1.0)
                 else:
-                    if self.ball_position.x < 64.0:
+                    if self.ball_position.x < 198.0:
+                        print "close",
                         speed = 1.0
                     else:
-                        speed = min(linear_interpolation, 1.0)
-                if self.y - offset < self.ball_predicted_pos.y:
-                    self._connection.send({'msgType':'changeDir', 'data':speed})
+                        speed = 1.0#min(linear_interpolation, 1.0)
+                if abs(slope) >= 9.0:
+                    offset = -25
+                elif slope > 0.0:
+                    offset = -6
                 else:
-                    self._connection.send({'msgType':'changeDir', 'data':speed})
+                    offset = -44
+                #print speed
+                #print offset
+                print self.y, offset, self.ball_predicted_pos.y
+                if self.y - offset < self.ball_predicted_pos.y:
+                    self._connection.send({'msgType':'changeDir', 'data':1.0})
+                else:
+                    self._connection.send({'msgType':'changeDir', 'data':-1.0})
             else:
             
                 slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
