@@ -80,7 +80,8 @@ class PingPongBot(object):
                 'gameIsOn': self._make_move,
                 'gameIsOver': self._game_over,
                 'missileReady': self._missile_ready,
-                'missileLaunched': self._missile_launched
+                'missileLaunched': self._missile_launched,
+                'error': self._error
                 }
         while True:
             response = self._connection.receive()
@@ -89,6 +90,12 @@ class PingPongBot(object):
                 response_handlers[msg_type](data)
             except KeyError:
                 self._log.error('Unkown response: %s' % msg_type)
+            except:
+                print "Unexpected error:", sys.exc_info()[0]
+                raise
+
+    def _error(self, data):
+        pass # whatevs
 
     def _game_joined(self, data):
         self._log.info('Game visualization url: %s' % data)
@@ -109,7 +116,7 @@ class PingPongBot(object):
     def _make_move(self, data):
         print data['left']['playerName'], data['right']['playerName'], self.bot_name,
         print data['ball']['pos']['x'], data['ball']['pos']['y'],
-        offset = -20 + random.randint(1, 10)
+        offset = -30 + random.randint(1, 10)
         self.y = data["left"]['y']
         self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
         if self.ball_old_pos and self.ball_position:
