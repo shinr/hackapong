@@ -5,7 +5,7 @@ import logging
 import socket
 import sys
 import webbrowser
-
+import random
 
 '''def slope(x1, x2, y1, y2):
     return (y2-y1)/(x2-x1)'''
@@ -109,7 +109,7 @@ class PingPongBot(object):
     def _make_move(self, data):
         print data['left']['playerName'], data['right']['playerName'], self.bot_name,
         print data['ball']['pos']['x'], data['ball']['pos']['y'],
-        offset = -25
+        offset = -20 + random.randint(1, 10)
         self.y = data["left"]['y']
         self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
         if self.ball_old_pos and self.ball_position:
@@ -125,9 +125,15 @@ class PingPongBot(object):
                 linear_interpolation = self.ball_predicted_pos.y - (self.y - offset)
                 linear_interpolation /= 8.0
                 if linear_interpolation < 0.0:
-                    speed = max(linear_interpolation, -1.0)
+                    if self.ball_position.x < 64.0:
+                        speed = -1.0
+                    else:
+                        speed = max(linear_interpolation, -1.0)
                 else:
-                    speed = min(linear_interpolation, 1.0)
+                    if self.ball_position.x < 64.0:
+                        speed = 1.0
+                    else:
+                        speed = min(linear_interpolation, 1.0)
                 if self.y - offset < self.ball_predicted_pos.y:
                     self._connection.send({'msgType':'changeDir', 'data':speed})
                 else:
