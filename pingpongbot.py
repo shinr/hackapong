@@ -51,6 +51,12 @@ class Point(object):
         if self.x == other.x and self.y == other.y:
             return True
         return False
+        
+def rightPoint(x1, x2, y1, y2):
+    slope = -(y2-y1)/(x2-x1)
+    slope = slope * (630-x1)
+    return -(slope - (y1))
+    
 
 class PingPongBot(object):
     missile_ready = False
@@ -59,6 +65,7 @@ class PingPongBot(object):
     ball_old_pos = None
     ball_position = None
     ball_predicted_pos = None
+    old_prediction_pos = None
     x = 0
     y = 0
     def __init__(self, connection, log):
@@ -104,6 +111,7 @@ class PingPongBot(object):
         if y < target_y + 2 and y > target_y - 2:
             return True
         return False
+        
 
     def _make_move(self, data):
         offset = 0
@@ -134,24 +142,43 @@ class PingPongBot(object):
                         self._connection.send({'msgType':'changeDir', 'data':0.0})
                     else:
                         self._connection.send({'msgType':'changeDir', 'data':-1.0})
-            elif self.ball_position.x > self.ball_old_pos.x and self.bot_side == "right":
+            elif self.bot_side == "right":
                 self.ball_predicted_pos = Point(640.0, ((640 - self.ball_position.x) * slope - self.ball_position.y)*-1.0) 
+                #print "oikea:", self.ball_predicted_pos.y
+                self.ball_predicted_pos.y = rightPoint(self.ball_old_pos.x, self.ball_position.x, self.ball_old_pos.y, self.ball_position.y)
+                print "oikea2:", self.ball_predicted_pos.y
                 if self.ball_predicted_pos.y > 480:
                     self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
-                    offset = 25
+                    #offset = 25
                 elif self.ball_predicted_pos.y < 0:
                     self.ball_predicted_pos.y *= -1.0
-                    offset = -25
-                if self.y - offset < self.ball_predicted_pos.y:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
+                    #offset = -25
+                 
+                print "oikea3:", self.ball_predicted_pos.y
+                
+                if self.ball_old_pos.x > self.ball_position.x:
+                    if not self.old_prediction_pos == self.ball_predicted_pos.y:
+                        if data['ball']['pos']['x'] < 500: 
+                            print 'asd'
+                            if data['right']['y'] < data['ball']['pos']['y']:
+                                self._connection.send({'msgType': 'changeDir', 'data': 1.0})
+                            elif data['right']['y'] > data['ball']['pos']['y']:
+                                self._connection.send({'msgType': 'changeDir', 'data': -1.0})
+                        if data['right']['y'] < self.ball_predicted_pos.y:
+                            print 'down'
+                            self._connection.send({'msgType':'changeDir', 'data':-1.0})
+                        else:
+                            print 'up'
+                            self._connection.send({'msgType':'changeDir', 'data':1.0})
+                            
+                        #limits message spam    
+                        self.old_prediction_pos = self.ball_predicted_pos.y
+                        
+                    if (data['right']['y'] - self.ball_predicted_pos.y) > -10 and (data['right']['y'] - self.ball_predicted_pos.y) < 10:
+                        print 'fuu'
                         self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':1.0})
-                else:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
+                    
+                                            
             else:
                 if self.y > 240:
                     if self.close_enough(self.y, 240):
