@@ -79,7 +79,8 @@ class PingPongBot(object):
                 'gameStarted': self._game_started,
                 'gameIsOn': self._make_move,
                 'gameIsOver': self._game_over,
-                'missileReady': self._missile_ready
+                'missileReady': self._missile_ready,
+                'missileLaunched': self._missile_launched
                 }
         while True:
             response = self._connection.receive()
@@ -144,10 +145,13 @@ class PingPongBot(object):
     def _game_over(self, data):
         self._log.info('Game ended. Winner: %s' % data)
 
-    def _missile_ready(self):
+    def _missile_ready(self, data):
         print "Missile ready!"
         self.missile_ready = True
+        self._connection.send({'msgType':'launchMissile'})
 
+    def _missile_launched(self, data):
+        pass
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
