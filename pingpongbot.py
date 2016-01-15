@@ -79,7 +79,7 @@ class PingPongBot(object):
                 'gameStarted': self._game_started,
                 'gameIsOn': self._make_move,
                 'gameIsOver': self._game_over,
-                'missileReady': self._missile_ready,
+                'missileReady': self._missile_ready
                 }
         while True:
             response = self._connection.receive()
@@ -106,64 +106,43 @@ class PingPongBot(object):
         return False
 
     def _make_move(self, data):
-        offset = 0
-        self.y = data[self.bot_side]['y']
-        if self.ball_old_pos is None and self.ball_position is None:
-            self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
-        else:
-            self.ball_old_pos = self.ball_position
-            self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
+        print data['left']['playerName'], data['right']['playerName'], self.bot_name,
+        print data['ball']['pos']['x'], data['ball']['pos']['y'],
+        offset = -25
+        self.y = data["left"]['y']
+        self.ball_position = Point(data['ball']['pos']['x'], data['ball']['pos']['y'])
         if self.ball_old_pos and self.ball_position:
-            slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
-            #going left
-            if self.ball_position.x < self.ball_old_pos.x and self.bot_side == "left":
-                self.ball_predicted_pos = Point(0.0, ((self.ball_position.x - 5) * slope - self.ball_position.y)*-1.0) 
+            # tulossa kohti
+            if self.ball_old_pos.x - self.ball_position.x > 0:
+                slope = (self.ball_position.y - self.ball_old_pos.y) / (self.ball_position.x - self.ball_old_pos.x)
+                self.ball_predicted_pos = Point(0.0, ((self.ball_position.x) * slope - self.ball_position.y)*-1.0) 
+                print self.ball_predicted_pos.y
                 if self.ball_predicted_pos.y > 480:
                     self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
-                    offset = 25
                 elif self.ball_predicted_pos.y < 0:
                     self.ball_predicted_pos.y *= -1.0
-                    offset = -25
-                if self.y - offset < self.ball_predicted_pos.y:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+                linear_interpolation = self.ball_predicted_pos.y - (self.y - offset)
+                linear_interpolation /= 8.0
+                if linear_interpolation < 0.0:
+                    speed = max(linear_interpolation, -1.0)
                 else:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
-            elif self.ball_position.x > self.ball_old_pos.x and self.bot_side == "right":
-                self.ball_predicted_pos = Point(640.0, ((640 - self.ball_position.x) * slope - self.ball_position.y)*-1.0) 
-                if self.ball_predicted_pos.y > 480:
-                    self.ball_predicted_pos.y = 480 - (self.ball_predicted_pos.y - 480)
-                    offset = 25
-                elif self.ball_predicted_pos.y < 0:
-                    self.ball_predicted_pos.y *= -1.0
-                    offset = -25
+                    speed = min(linear_interpolation, 1.0)
                 if self.y - offset < self.ball_predicted_pos.y:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':1.0})
+                    self._connection.send({'msgType':'changeDir', 'data':speed})
                 else:
-                    if self.close_enough(self.y, self.ball_predicted_pos.y):
-                        self._connection.send({'msgType':'changeDir', 'data':0.0})
-                    else:
-                        self._connection.send({'msgType':'changeDir', 'data':-1.0})
+                    self._connection.send({'msgType':'changeDir', 'data':speed})
             else:
                 if self.y > 240:
-                    if self.close_enough(self.y, 240):
+                    if self.close_enough(self.y + offset, 240):
                         self._connection.send({'msgType':'changeDir', 'data':0.0})
                     else:
                         self._connection.send({'msgType':'changeDir', 'data':-1.0})
                 else:
-                    if self.close_enough(self.y, 240):
+                    if self.close_enough(self.y + offset, 240):
                         self._connection.send({'msgType':'changeDir', 'data':0.0})
                     else:
                         self._connection.send({'msgType':'changeDir', 'data':1.0})
-
+        self.ball_old_pos = self.ball_position
 
     def _game_over(self, data):
         self._log.info('Game ended. Winner: %s' % data)
